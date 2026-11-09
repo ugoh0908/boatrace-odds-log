@@ -1,0 +1,38 @@
+name: collect-odds
+on:
+  schedule:
+    - cron: '45 22 * * *'   # 07:45 JST -> runs until 13:30
+    - cron: '15 4 * * *'    # 13:15 JST -> runs until 19:00
+    - cron: '45 9 * * *'    # 18:45 JST -> runs until 22:00
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: collect-${{ github.run_id }}
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - name: pick window end
+        id: w
+        run: |
+          H=$(TZ=Asia/Tokyo date +%H)
+          if [ "$H" -lt 13 ]; then echo "until=13:35" >> $GITHUB_OUTPUT
+          elif [ "$H" -lt 18 ]; then echo "until=19:05" >> $GITHUB_OUTPUT
+          else echo "until=22:00" >> $GITHUB_OUTPUT; fi
+      - name: collect (commits every 20 minutes)
+        run: |
+          git config user.name "odds-bot"; git config user.email "odds-bot@users.noreply.github.com"
+          python3 collector.py --until ${{ steps.w.outputs.until }} &
+          PID=$!
+          while kill -0 $PID 2>/dev/null; do
+            sleep 1200
+            git add boatrace_data 2>/dev/null && git commit -qm "odds $(TZ=Asia/Tokyo date +%m%d-%H%M)" && git pull -q --rebase && git push -q || true
+          done
+      - name: final commit
+        if: always()
+        run: |
+          git add boatrace_data 2>/dev/null && git commit -qm "odds $(TZ=Asia/Tokyo date +%m%d-%H%M) final" || exit 0
+          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
