@@ -38,12 +38,14 @@ jobs:
           git config user.name "odds-bot"; git config user.email "odds-bot@users.noreply.github.com"
           python3 collector.py --until ${{ steps.w.outputs.until }} &
           PID=$!
+          n=0
           while kill -0 $PID 2>/dev/null; do
-            sleep 1200
-            git add boatrace_data 2>/dev/null && git commit -qm "odds $(TZ=Asia/Tokyo date +%m%d-%H%M)" && git pull -q --rebase && git push -q || true
+            sleep 30; n=$((n+1))
+            [ $((n % 40)) -eq 0 ] || continue
+            git add boatrace_data 2>/dev/null && git commit -qm "odds $(TZ=Asia/Tokyo date +%m%d-%H%M)" && git pull -q --rebase --autostash && git push -q || true
           done
       - name: final commit
         if: always()
         run: |
           git add boatrace_data 2>/dev/null && git commit -qm "odds $(TZ=Asia/Tokyo date +%m%d-%H%M) final" || exit 0
-          for i in 1 2 3; do git pull -q --rebase && git push -q && break; sleep 5; done
+          for i in 1 2 3; do git pull -q --rebase --autostash && git push -q && break; sleep 5; done
