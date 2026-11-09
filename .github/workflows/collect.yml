@@ -15,6 +15,17 @@ jobs:
     timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
+      - name: connectivity check (manual runs only)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python3 -c "
+          import collector as C, datetime
+          hd = datetime.datetime.now(C.JST).strftime('%Y%m%d'); v = C.venues(hd); print('venues', v)
+          if v:
+              dl = C.deadlines(v[0], hd); print('deadlines', dl)
+              w, t = C.snapshot(v[0], 12, hd); print('win odds 12R', w, 'tri count', sum(x is not None for x in t.values()))
+              print('result', C.result(v[0], 12, hd))
+          "
       - name: pick window end
         id: w
         run: |
