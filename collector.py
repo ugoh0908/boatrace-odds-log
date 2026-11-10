@@ -11,7 +11,7 @@ import csv, datetime, json, os, re, threading, time, urllib.request
 
 JST = datetime.timezone(datetime.timedelta(hours=9))
 BASE = 'https://www.boatrace.jp/owpc/pc/race'
-SNAPS = [('m10', -600), ('m5', -300), ('m3', -180), ('m2', -120), ('m1', -60), ('final', 180)]
+SNAPS = [('m10', -600), ('m5', -300), ('m3', -180), ('m2', -120), ('m1', -60), ('final', 180), ('result', 900)]
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'boatrace_data')
 os.makedirs(OUT, exist_ok=True)
 lock = threading.Lock()
@@ -67,8 +67,10 @@ def save(hd, row):
 
 def job(hd, jcd, rno, dl, snap):
     try:
-        win, tri = snapshot(jcd, rno, hd)
-        res = result(jcd, rno, hd) if snap == 'final' else ('', '', '', '')
+        if snap == 'result':
+            win, tri, res = [None] * 6, {}, result(jcd, rno, hd)
+        else:
+            win, tri, res = *snapshot(jcd, rno, hd), ('', '', '', '')
         now = datetime.datetime.now(JST).strftime('%H:%M:%S')
         save(hd, [hd, jcd, rno, dl, snap, now, *win, json.dumps(tri, separators=(',', ':')), *res])
         print(now, f'{jcd}場 {rno}R {snap}', flush=True)
