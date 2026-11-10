@@ -1,9 +1,7 @@
 name: collect-odds
 on:
   schedule:
-    - cron: '45 22 * * *'   # 07:45 JST -> runs until 13:30
-    - cron: '15 4 * * *'    # 13:15 JST -> runs until 19:00
-    - cron: '45 9 * * *'    # 18:45 JST -> runs until 22:00
+    - cron: '7 22,23,0-12 * * *'   # every hour at :07, 07:07-21:07 JST; each run covers 75 minutes
   workflow_dispatch:
 permissions:
   contents: write
@@ -12,7 +10,7 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - name: connectivity check (manual runs only)
@@ -26,17 +24,10 @@ jobs:
               w, t = C.snapshot(v[0], 12, hd); print('win odds 12R', w, 'tri count', sum(x is not None for x in t.values()))
               print('result', C.result(v[0], 12, hd))
           "
-      - name: pick window end
-        id: w
-        run: |
-          H=$(TZ=Asia/Tokyo date +%H)
-          if [ "$H" -lt 13 ]; then echo "until=13:35" >> $GITHUB_OUTPUT
-          elif [ "$H" -lt 18 ]; then echo "until=19:05" >> $GITHUB_OUTPUT
-          else echo "until=22:00" >> $GITHUB_OUTPUT; fi
-      - name: collect (commits every 20 minutes)
+      - name: collect (75-minute window, commits every 20 minutes)
         run: |
           git config user.name "odds-bot"; git config user.email "odds-bot@users.noreply.github.com"
-          python3 collector.py --until ${{ steps.w.outputs.until }} &
+          python3 collector.py --minutes 75 &
           PID=$!
           n=0
           while kill -0 $PID 2>/dev/null; do

@@ -115,6 +115,11 @@ def run_window(hd, until):
 
 if __name__ == '__main__':
     import sys
+    if len(sys.argv) > 2 and sys.argv[1] == '--minutes':
+        now = datetime.datetime.now(JST)
+        SUFFIX = '_' + now.strftime('%H%M')
+        end = now + datetime.timedelta(minutes=int(sys.argv[2]))
+        run_window(now.strftime('%Y%m%d'), end.strftime('%H:%M') if end.date() == now.date() else '23:59'); sys.exit(0)
     if len(sys.argv) > 2 and sys.argv[1] == '--until':
         SUFFIX = '_' + sys.argv[2].replace(':', '')
         run_window(datetime.datetime.now(JST).strftime('%Y%m%d'), sys.argv[2]); sys.exit(0)
