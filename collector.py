@@ -11,7 +11,7 @@ import csv, datetime, json, os, re, threading, time, urllib.request
 
 JST = datetime.timezone(datetime.timedelta(hours=9))
 BASE = 'https://www.boatrace.jp/owpc/pc/race'
-SNAPS = [('m10', -600), ('m5', -300), ('m3', -180), ('m2', -120), ('m1', -60), ('final', 180), ('result', 900)]
+SNAPS = [('m10', -600), ('m5', -300), ('m3', -180), ('m2', -120), ('m1', -60), ('s30', -30), ('final', 180), ('result', 900)]
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'boatrace_data')
 os.makedirs(OUT, exist_ok=True)
 lock = threading.Lock()
